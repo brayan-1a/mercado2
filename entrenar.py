@@ -10,7 +10,7 @@ import streamlit as st
 
 # URL y API Key de Supabase
 URL = 'https://odlosqyzqrggrhvkdovj.supabase.co'
-KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kbG9zcXl6cXJnZ3Jodmtkb3ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzAwNjgyODksImV4cCI6MjA0NTY0NDI4OX0.z5btFX44Eu30kOBJj7eZKAmOUG62IrTcpXUVhMqK9Ck'
+KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kbG9zcXl6cXJnZ3Jodmtkb3ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzAwNjgyODksImV4cCI6MjA0NTY0NDI4OX0.z5btFX44Eu30kOBJj7eZKAmOUG62IrTcpXUVhMqK9Cky'
 
 def get_supabase_client():
     """Crea y devuelve una instancia del cliente Supabase."""
@@ -24,35 +24,48 @@ df_venta = supabase.table('ventas').select('*').execute().data
 df_producto = supabase.table('productos').select('*').execute().data
 df_cliente = supabase.table('clientes').select('*').execute().data
 df_promociones = supabase.table('promociones').select('*').execute().data
+df_condiciones_climaticas = supabase.table('condiciones_climaticas').select('*').execute().data
 
 # Convertir a DataFrames de Pandas
 df_venta = pd.DataFrame(df_venta)
 df_producto = pd.DataFrame(df_producto)
 df_cliente = pd.DataFrame(df_cliente)
 df_promociones = pd.DataFrame(df_promociones)
+df_condiciones_climaticas = pd.DataFrame(df_condiciones_climaticas)
 
-# Verificar las columnas del DataFrame
-st.write(df_venta.columns)
+# Verificar las columnas de cada DataFrame
+st.write("Columnas de df_venta:", df_venta.columns)
+st.write("Columnas de df_producto:", df_producto.columns)
+st.write("Columnas de df_cliente:", df_cliente.columns)
 
 # Preprocesamiento de datos
 # Aseguramos que las fechas estén en el formato correcto
 df_venta['fecha_venta'] = pd.to_datetime(df_venta['fecha_venta'])
-df_promociones['fecha_inicio'] = pd.to_datetime(df_promociones['fecha_inicio'])
-df_promociones['fecha_fin'] = pd.to_datetime(df_promociones['fecha_fin'])
+df_condiciones_climaticas['fecha'] = pd.to_datetime(df_condiciones_climaticas['fecha'])
+
+# Mostrar algunas filas de cada DataFrame para verificar que los datos sean correctos
+st.write("Primeras 5 filas de df_venta:", df_venta.head())
+st.write("Primeras 5 filas de df_producto:", df_producto.head())
+st.write("Primeras 5 filas de df_cliente:", df_cliente.head())
 
 # Hacer el merge de la tabla ventas con otras tablas relevantes
 df_venta = df_venta.merge(df_producto, on='producto_id', how='left')
-df_venta = df_venta.merge(df_cliente, on='cliente_id', how='left')
-df_venta = df_venta.merge(df_promociones, on='producto_id', how='left')
+st.write("Después de merge con df_producto:", df_venta.head())
 
-# Asegurarse de que la columna cantidad_vendida esté en el formato correcto
-df_venta['cantidad_vendida'] = df_venta['cantidad_vendida'].astype(float)
+df_venta = df_venta.merge(df_cliente, on='cliente_id', how='left')
+st.write("Después de merge con df_cliente:", df_venta.head())
+
+df_venta = df_venta.merge(df_promociones, on='producto_id', how='left')
+st.write("Después de merge con df_promociones:", df_venta.head())
 
 # Ahora necesitamos una columna adicional para las predicciones, por ejemplo: cantidad_vendida
+df_venta['cantidad_vendida'] = df_venta['cantidad_vendida'].astype(float)
+
+# Verificar las columnas disponibles después de todos los merges
+st.write("Columnas finales de df_venta:", df_venta.columns)
+
 # Supongamos que queremos predecir la cantidad a comprar para evitar el desperdicio
 # Utilizaremos columnas como fecha_venta, descuento_aplicado, etc., como características de entrada
-
-# Selección de características (features) para el entrenamiento
 X = df_venta[['fecha_venta', 'descuento_aplicado', 'cantidad_vendida']]
 X['fecha_venta'] = X['fecha_venta'].map(lambda x: x.timestamp())  # Convertir fecha a timestamp para usarla en el modelo
 
@@ -72,45 +85,3 @@ y_pred = modelo.predict(X_test)
 # Evaluación del modelo
 mae = mean_absolute_error(y_test, y_pred)
 st.write(f"Error absoluto medio (MAE) en las predicciones: {mae}")
-
-# Guardar el modelo entrenado
-with open('random_forest_model.pkl', 'wb') as f:
-    pickle.dump(modelo, f)
-
-# Función de predicción
-def predecir_cantidad_a_comprar(fecha_venta, descuento_aplicado):
-    # Convertir fecha a timestamp
-    fecha_venta_timestamp = datetime.strptime(fecha_venta, '%Y-%m-%d').timestamp()
-
-    # Crear DataFrame con los datos de entrada
-    datos_entrada = pd.DataFrame({
-        'fecha_venta': [fecha_venta_timestamp],
-        'descuento_aplicado': [descuento_aplicado]
-    })
-
-    # Realizar la predicción
-    cantidad_predicha = modelo.predict(datos_entrada)
-    return cantidad_predicha[0]
-
-# Mostrar predicciones en Streamlit
-st.title("Predicción de Cantidad a Comprar")
-
-fecha_venta_input = st.date_input("Fecha de la venta", datetime.today())
-descuento_aplicado_input = st.slider("Descuento aplicado (%)", 0.0, 20.0, 10.0)
-
-if st.button("Predecir cantidad a comprar"):
-    cantidad = predecir_cantidad_a_comprar(str(fecha_venta_input), descuento_aplicado_input)
-    st.write(f"La cantidad recomendada a comprar es: {cantidad} unidades")
-
-# Mostrar botón para descargar el modelo
-@st.cache
-def descargar_modelo():
-    return 'random_forest_model.pkl'
-
-if st.button("Descargar modelo entrenado"):
-    st.download_button(
-        label="Descargar modelo",
-        data=open(descargar_modelo(), "rb").read(),
-        file_name="random_forest_model.pkl",
-        mime="application/octet-stream"
-    )

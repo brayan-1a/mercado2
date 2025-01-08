@@ -53,7 +53,7 @@ if df_venta is not None:
     df_venta = df_venta.merge(df_promociones, on='producto_id', how='left')
 
     # Asegurar que la columna cantidad_vendida sea del tipo correcto
-    df_venta['cantidad_vendida'] = df_venta['cantidad_vendida'].astype(float)
+    #df_venta['cantidad_vendida'] = df_venta['cantidad_vendida'].astype(float)
 
     # Selección de características para el modelo
     X = df_venta[['fecha_venta', 'descuento_aplicado', 'cantidad_vendida']]  # Aquí seleccionamos las columnas que necesitas

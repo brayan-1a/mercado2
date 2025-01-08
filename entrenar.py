@@ -37,9 +37,16 @@ df_venta, df_producto, df_cliente, df_promociones, df_condiciones_climaticas = c
 
 # Asegurarse de que las tablas no son None
 if df_venta is not None:
+    # Inspeccionar las columnas del DataFrame df_venta
+    print(df_venta.columns)  # Verifica que las columnas estén correctamente nombradas
+    print(df_venta.dtypes)  # Verifica los tipos de datos de las columnas
+
     # Preprocesar los datos
     df_venta['fecha_venta'] = pd.to_datetime(df_venta['fecha_venta'])
     df_condiciones_climaticas['fecha'] = pd.to_datetime(df_condiciones_climaticas['fecha'])
+
+    # Limpiar y estandarizar nombres de columnas (si es necesario)
+    df_venta.columns = df_venta.columns.str.strip().str.lower()
 
     # Hacer el merge de la tabla ventas con otras tablas relevantes
     df_venta = df_venta.merge(df_producto, on='producto_id', how='left')
@@ -50,7 +57,7 @@ if df_venta is not None:
     df_venta['cantidad_vendida'] = df_venta['cantidad_vendida'].astype(float)
 
     # Selección de características para el modelo
-    X = df_venta[['fecha_venta', 'descuento_aplicado', 'cantidad_vendida']]
+    X = df_venta[['fecha_venta', 'descuento_aplicado', 'cantidad_vendida']]  # Aquí seleccionamos las columnas que necesitas
     X['fecha_venta'] = X['fecha_venta'].map(lambda x: x.timestamp())  # Convertir fecha a timestamp
 
     y = df_venta['cantidad_vendida']  # Variable objetivo
@@ -106,4 +113,5 @@ if df_venta is not None:
         )
 else:
     st.write("Hubo un error al cargar las tablas desde Supabase.")
+
 

@@ -10,7 +10,7 @@ import streamlit as st
 
 # URL y API Key de Supabase
 URL = 'https://odlosqyzqrggrhvkdovj.supabase.co'
-KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kbG9zcXl6cXJnZ3Jodmtkb3ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzAwNjgyODksImV4cCI6MjA0NTY0NDI4OX0.z5btFX44Eu30kOBJj7eZKAmOUG62IrTcpXUVhMqK9Ck'  # Reemplaza con tu clave API
+KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kbG9zcXl6cXJnZ3Jodmtkb3ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzAwNjgyODksImV4cCI6MjA0NTY0NDI4OX0.z5btFX44Eu30kOBJj7eZKAmOUG62IrTcpXUVhMqK9Ck'
 
 def get_supabase_client():
     """Crea y devuelve una instancia del cliente Supabase."""
@@ -19,38 +19,36 @@ def get_supabase_client():
 # Conectar con la base de datos de Supabase
 supabase = get_supabase_client()
 
-# Intentar cargar las tablas necesarias desde Supabase
-try:
-    # Usar nombres correctos de las tablas, ajusta según lo que tengas en tu base de datos
-    df_venta = supabase.table('ventas').select('*').execute().data
-    df_producto = supabase.table('productos').select('*').execute().data
-    df_cliente = supabase.table('clientes').select('*').execute().data
-    df_promociones = supabase.table('promociones').select('*').execute().data
-    df_condiciones_climaticas = supabase.table('condiciones_climaticas').select('*').execute().data
-except Exception as e:
-    st.write(f"Error al cargar datos desde Supabase: {e}")
-    raise
+# Cargar las tablas necesarias desde Supabase
+df_venta = supabase.table('ventas').select('*').execute().data
+df_producto = supabase.table('productos').select('*').execute().data
+df_cliente = supabase.table('clientes').select('*').execute().data
+df_promociones = supabase.table('promociones').select('*').execute().data
 
 # Convertir a DataFrames de Pandas
 df_venta = pd.DataFrame(df_venta)
 df_producto = pd.DataFrame(df_producto)
 df_cliente = pd.DataFrame(df_cliente)
 df_promociones = pd.DataFrame(df_promociones)
-df_condiciones_climaticas = pd.DataFrame(df_condiciones_climaticas)
+
+# Verificar las columnas del DataFrame
+st.write(df_venta.columns)
 
 # Preprocesamiento de datos
 # Aseguramos que las fechas estén en el formato correcto
 df_venta['fecha_venta'] = pd.to_datetime(df_venta['fecha_venta'])
-df_condiciones_climaticas['fecha'] = pd.to_datetime(df_condiciones_climaticas['fecha'])
+df_promociones['fecha_inicio'] = pd.to_datetime(df_promociones['fecha_inicio'])
+df_promociones['fecha_fin'] = pd.to_datetime(df_promociones['fecha_fin'])
 
 # Hacer el merge de la tabla ventas con otras tablas relevantes
 df_venta = df_venta.merge(df_producto, on='producto_id', how='left')
 df_venta = df_venta.merge(df_cliente, on='cliente_id', how='left')
 df_venta = df_venta.merge(df_promociones, on='producto_id', how='left')
 
-# Ahora necesitamos una columna adicional para las predicciones, por ejemplo: cantidad_vendida
+# Asegurarse de que la columna cantidad_vendida esté en el formato correcto
 df_venta['cantidad_vendida'] = df_venta['cantidad_vendida'].astype(float)
 
+# Ahora necesitamos una columna adicional para las predicciones, por ejemplo: cantidad_vendida
 # Supongamos que queremos predecir la cantidad a comprar para evitar el desperdicio
 # Utilizaremos columnas como fecha_venta, descuento_aplicado, etc., como características de entrada
 
@@ -116,5 +114,3 @@ if st.button("Descargar modelo entrenado"):
         file_name="random_forest_model.pkl",
         mime="application/octet-stream"
     )
-
-

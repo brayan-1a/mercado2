@@ -1,87 +1,109 @@
 import pandas as pd
-import numpy as np
 from datetime import datetime
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error
-from supabase import create_client
 import pickle
 import streamlit as st
+import config  # Importamos el archivo config.py
 
-# URL y API Key de Supabase
-URL = 'https://odlosqyzqrggrhvkdovj.supabase.co'
-KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kbG9zcXl6cXJnZ3Jodmtkb3ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzAwNjgyODksImV4cCI6MjA0NTY0NDI4OX0.z5btFX44Eu30kOBJj7eZKAmOUG62IrTcpXUVhMqK9Cky'
+# Conectar con Supabase usando la función get_supabase_client de config.py
+supabase = config.get_supabase_client()
 
-def get_supabase_client():
-    """Crea y devuelve una instancia del cliente Supabase."""
-    return create_client(URL, KEY)
+# Función para cargar las tablas desde Supabase
+def cargar_tablas():
+    try:
+        df_venta = supabase.table('ventas').select('*').execute().data
+        df_producto = supabase.table('productos').select('*').execute().data
+        df_cliente = supabase.table('clientes').select('*').execute().data
+        df_promociones = supabase.table('promociones').select('*').execute().data
+        df_condiciones_climaticas = supabase.table('condiciones_climaticas').select('*').execute().data
+        
+        # Convertir las respuestas en DataFrames de pandas
+        df_venta = pd.DataFrame(df_venta)
+        df_producto = pd.DataFrame(df_producto)
+        df_cliente = pd.DataFrame(df_cliente)
+        df_promociones = pd.DataFrame(df_promociones)
+        df_condiciones_climaticas = pd.DataFrame(df_condiciones_climaticas)
 
-# Conectar con la base de datos de Supabase
-supabase = get_supabase_client()
+        return df_venta, df_producto, df_cliente, df_promociones, df_condiciones_climaticas
+    
+    except Exception as e:
+        print(f"Error al cargar las tablas desde Supabase: {e}")
+        return None
 
-# Cargar las tablas necesarias desde Supabase
-df_venta = supabase.table('ventas').select('*').execute().data
-df_producto = supabase.table('productos').select('*').execute().data
-df_cliente = supabase.table('clientes').select('*').execute().data
-df_promociones = supabase.table('promociones').select('*').execute().data
-df_condiciones_climaticas = supabase.table('condiciones_climaticas').select('*').execute().data
+# Cargar las tablas
+df_venta, df_producto, df_cliente, df_promociones, df_condiciones_climaticas = cargar_tablas()
 
-# Convertir a DataFrames de Pandas
-df_venta = pd.DataFrame(df_venta)
-df_producto = pd.DataFrame(df_producto)
-df_cliente = pd.DataFrame(df_cliente)
-df_promociones = pd.DataFrame(df_promociones)
-df_condiciones_climaticas = pd.DataFrame(df_condiciones_climaticas)
+# Asegurarse de que las tablas no son None
+if df_venta is not None:
+    # Preprocesar los datos
+    df_venta['fecha_venta'] = pd.to_datetime(df_venta['fecha_venta'])
+    df_condiciones_climaticas['fecha'] = pd.to_datetime(df_condiciones_climaticas['fecha'])
 
-# Verificar las columnas de cada DataFrame
-st.write("Columnas de df_venta:", df_venta.columns)
-st.write("Columnas de df_producto:", df_producto.columns)
-st.write("Columnas de df_cliente:", df_cliente.columns)
+    # Hacer el merge de la tabla ventas con otras tablas relevantes
+    df_venta = df_venta.merge(df_producto, on='producto_id', how='left')
+    df_venta = df_venta.merge(df_cliente, on='cliente_id', how='left')
+    df_venta = df_venta.merge(df_promociones, on='producto_id', how='left')
 
-# Preprocesamiento de datos
-# Aseguramos que las fechas estén en el formato correcto
-df_venta['fecha_venta'] = pd.to_datetime(df_venta['fecha_venta'])
-df_condiciones_climaticas['fecha'] = pd.to_datetime(df_condiciones_climaticas['fecha'])
+    # Asegurar que la columna cantidad_vendida sea del tipo correcto
+    df_venta['cantidad_vendida'] = df_venta['cantidad_vendida'].astype(float)
 
-# Mostrar algunas filas de cada DataFrame para verificar que los datos sean correctos
-st.write("Primeras 5 filas de df_venta:", df_venta.head())
-st.write("Primeras 5 filas de df_producto:", df_producto.head())
-st.write("Primeras 5 filas de df_cliente:", df_cliente.head())
+    # Selección de características para el modelo
+    X = df_venta[['fecha_venta', 'descuento_aplicado', 'cantidad_vendida']]
+    X['fecha_venta'] = X['fecha_venta'].map(lambda x: x.timestamp())  # Convertir fecha a timestamp
 
-# Hacer el merge de la tabla ventas con otras tablas relevantes
-df_venta = df_venta.merge(df_producto, on='producto_id', how='left')
-st.write("Después de merge con df_producto:", df_venta.head())
+    y = df_venta['cantidad_vendida']  # Variable objetivo
 
-df_venta = df_venta.merge(df_cliente, on='cliente_id', how='left')
-st.write("Después de merge con df_cliente:", df_venta.head())
+    # Dividir los datos en entrenamiento (80%) y prueba (20%)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-df_venta = df_venta.merge(df_promociones, on='producto_id', how='left')
-st.write("Después de merge con df_promociones:", df_venta.head())
+    # Entrenar el modelo
+    modelo = RandomForestRegressor(n_estimators=100, random_state=42)
+    modelo.fit(X_train, y_train)
 
-# Ahora necesitamos una columna adicional para las predicciones, por ejemplo: cantidad_vendida
-df_venta['cantidad_vendida'] = df_venta['cantidad_vendida'].astype(float)
+    # Predicciones y evaluación
+    y_pred = modelo.predict(X_test)
+    mae = mean_absolute_error(y_test, y_pred)
 
-# Verificar las columnas disponibles después de todos los merges
-st.write("Columnas finales de df_venta:", df_venta.columns)
+    # Mostrar el error en Streamlit
+    st.write(f"Error absoluto medio (MAE) en las predicciones: {mae}")
 
-# Supongamos que queremos predecir la cantidad a comprar para evitar el desperdicio
-# Utilizaremos columnas como fecha_venta, descuento_aplicado, etc., como características de entrada
-X = df_venta[['fecha_venta', 'descuento_aplicado', 'cantidad_vendida']]
-X['fecha_venta'] = X['fecha_venta'].map(lambda x: x.timestamp())  # Convertir fecha a timestamp para usarla en el modelo
+    # Guardar el modelo entrenado
+    with open('random_forest_model.pkl', 'wb') as f:
+        pickle.dump(modelo, f)
 
-# Variable objetivo (target), que será la cantidad de productos a comprar
-y = df_venta['cantidad_vendida']
+    # Función de predicción
+    def predecir_cantidad_a_comprar(fecha_venta, descuento_aplicado):
+        fecha_venta_timestamp = datetime.strptime(fecha_venta, '%Y-%m-%d').timestamp()
+        datos_entrada = pd.DataFrame({
+            'fecha_venta': [fecha_venta_timestamp],
+            'descuento_aplicado': [descuento_aplicado]
+        })
+        cantidad_predicha = modelo.predict(datos_entrada)
+        return cantidad_predicha[0]
 
-# Dividir los datos en entrenamiento (80%) y prueba (20%)
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    # Mostrar en Streamlit
+    st.title("Predicción de Cantidad a Comprar")
+    fecha_venta_input = st.date_input("Fecha de la venta", datetime.today())
+    descuento_aplicado_input = st.slider("Descuento aplicado (%)", 0.0, 20.0, 10.0)
 
-# Entrenar el modelo de Random Forest
-modelo = RandomForestRegressor(n_estimators=100, random_state=42)
-modelo.fit(X_train, y_train)
+    if st.button("Predecir cantidad a comprar"):
+        cantidad = predecir_cantidad_a_comprar(str(fecha_venta_input), descuento_aplicado_input)
+        st.write(f"La cantidad recomendada a comprar es: {cantidad} unidades")
 
-# Predicciones y evaluación
-y_pred = modelo.predict(X_test)
+    # Funcionalidad para descargar el modelo
+    @st.cache
+    def descargar_modelo():
+        return 'random_forest_model.pkl'
 
-# Evaluación del modelo
-mae = mean_absolute_error(y_test, y_pred)
-st.write(f"Error absoluto medio (MAE) en las predicciones: {mae}")
+    if st.button("Descargar modelo entrenado"):
+        st.download_button(
+            label="Descargar modelo",
+            data=open(descargar_modelo(), "rb").read(),
+            file_name="random_forest_model.pkl",
+            mime="application/octet-stream"
+        )
+else:
+    st.write("Hubo un error al cargar las tablas desde Supabase.")
+

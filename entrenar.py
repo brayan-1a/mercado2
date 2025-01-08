@@ -41,13 +41,12 @@ if df_venta is not None:
     print(df_venta.columns)  # Verifica que las columnas estén correctamente nombradas
     print(df_venta.dtypes)  # Verifica los tipos de datos de las columnas
 
-    # Preprocesar los datos
-    df_venta['fecha_venta'] = pd.to_datetime(df_venta['fecha_venta'])
-    df_condiciones_climaticas['fecha'] = pd.to_datetime(df_condiciones_climaticas['fecha'])
-
     # Limpiar y estandarizar nombres de columnas (si es necesario)
-    df_venta.columns = df_venta.columns.str.strip().str.lower()
-
+    df_venta.columns = df_venta.columns.str.strip().str.lower()  # Estandarizar nombres de columnas
+    
+    # Asegurarse de que las columnas estén en el formato correcto
+    df_venta['fecha_venta'] = pd.to_datetime(df_venta['fecha_venta'], errors='coerce')  # Convertir 'fecha_venta' a datetime
+    
     # Hacer el merge de la tabla ventas con otras tablas relevantes
     df_venta = df_venta.merge(df_producto, on='producto_id', how='left')
     df_venta = df_venta.merge(df_cliente, on='cliente_id', how='left')
@@ -113,5 +112,6 @@ if df_venta is not None:
         )
 else:
     st.write("Hubo un error al cargar las tablas desde Supabase.")
+
 
 

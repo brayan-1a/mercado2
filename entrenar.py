@@ -56,7 +56,7 @@ if df_venta is not None:
     #df_venta['cantidad_vendida'] = df_venta['cantidad_vendida'].astype(float)
 
     # Selección de características para el modelo
-    X = df_venta[['fecha_venta', 'descuento_aplicado', 'cantidad_vendida']]  # Aquí seleccionamos las columnas que necesitas
+    X = df_venta[['fecha_venta']]  # Aquí seleccionamos las columnas que necesitas
     X['fecha_venta'] = X['fecha_venta'].map(lambda x: x.timestamp())  # Convertir fecha a timestamp
 
     y = df_venta['cantidad_vendida']  # Variable objetivo

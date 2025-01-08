@@ -19,12 +19,17 @@ def get_supabase_client():
 # Conectar con la base de datos de Supabase
 supabase = get_supabase_client()
 
-# Cargar las tablas necesarias desde Supabase
-df_venta = supabase.table('ventas').select('*').execute().data
-df_producto = supabase.table('productos').select('*').execute().data
-df_cliente = supabase.table('clientes').select('*').execute().data
-df_promociones = supabase.table('promociones').select('*').execute().data
-df_condiciones_climaticas = supabase.table('condiciones_climaticas').select('*').execute().data
+# Intentar cargar las tablas necesarias desde Supabase
+try:
+    # Usar nombres correctos de las tablas, ajusta según lo que tengas en tu base de datos
+    df_venta = supabase.table('ventas').select('*').execute().data
+    df_producto = supabase.table('productos').select('*').execute().data
+    df_cliente = supabase.table('clientes').select('*').execute().data
+    df_promociones = supabase.table('promociones').select('*').execute().data
+    df_condiciones_climaticas = supabase.table('condiciones_climaticas').select('*').execute().data
+except Exception as e:
+    st.write(f"Error al cargar datos desde Supabase: {e}")
+    raise
 
 # Convertir a DataFrames de Pandas
 df_venta = pd.DataFrame(df_venta)
@@ -111,4 +116,5 @@ if st.button("Descargar modelo entrenado"):
         file_name="random_forest_model.pkl",
         mime="application/octet-stream"
     )
+
 

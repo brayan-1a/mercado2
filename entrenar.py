@@ -20,7 +20,7 @@ def get_supabase_client():
 supabase = get_supabase_client()
 
 # Cargar las tablas necesarias desde Supabase
-df_venta = supabase.table('venta').select('*').execute().data
+df_venta = supabase.table('ventas').select('*').execute().data
 df_producto = supabase.table('productos').select('*').execute().data
 df_cliente = supabase.table('clientes').select('*').execute().data
 df_promociones = supabase.table('promociones').select('*').execute().data

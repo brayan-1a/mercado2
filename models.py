@@ -1,3 +1,4 @@
+import pandas as pd  # Asegúrate de que pandas esté importado
 from config import Config  # Importar la clase Config
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.model_selection import TimeSeriesSplit
@@ -5,6 +6,7 @@ from sklearn.metrics import mean_squared_error, mean_absolute_percentage_error
 import numpy as np
 from typing import Dict, Any, Tuple
 import joblib
+
 
 
 class PredictionModel:

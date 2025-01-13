@@ -1,49 +1,52 @@
 import pickle
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error
-from config import get_supabase_client
 import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
 
-def get_data_from_supabase():
-    """Obtiene los datos necesarios desde Supabase"""
-    supabase = get_supabase_client()
-    # Suponiendo que tienes una tabla 'ventas' con las columnas necesarias
-    ventas_data = supabase.table('ventas').select('*').execute().data
-    df = pd.DataFrame(ventas_data)
+def load_data():
+    """Carga los datos de entrenamiento"""
+    # Aquí se debe cargar el archivo CSV o los datos que deseas usar
+    # Por ejemplo, si usas pandas para leer el archivo
+    df = pd.read_csv('datos_entrenamiento.csv')  # Asegúrate de tener este archivo en la carpeta correcta
     return df
 
 def preprocess_data(df):
-    """Realiza el preprocesamiento de los datos"""
-    # Aquí puedes limpiar o modificar los datos según sea necesario
-    df = df.dropna()  # Ejemplo de eliminar filas con valores faltantes
-    # Suponiendo que 'cantidad_vendida' es lo que quieres predecir
-    X = df[['precio_total', 'descuento_aplicado', 'metodo_pago']]  # Variables independientes
-    y = df['cantidad_vendida']  # Variable dependiente
-    return X, y
+    """Preprocesa los datos"""
+    # Realiza las transformaciones necesarias, como:
+    # - Eliminar columnas no relevantes
+    # - Rellenar valores nulos
+    # - Convertir columnas categóricas en numéricas, etc.
+    df = df.dropna()  # Un ejemplo simple
+    return df
 
-def train_model(X, y):
-    """Entrena el modelo y lo guarda en un archivo"""
-    # Dividir los datos en conjunto de entrenamiento y prueba
+def train_model(df):
+    """Entrena un modelo"""
+    df = preprocess_data(df)
+    X = df[['precio_total', 'descuento_aplicado', 'metodo_pago']]  # Características
+    y = df['target']  # Variable a predecir (ajustar a tus datos)
+    
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
-    # Entrenar el modelo
-    model = RandomForestRegressor(n_estimators=100, random_state=42)
+    model = RandomForestClassifier(n_estimators=100)
     model.fit(X_train, y_train)
     
-    # Evaluar el modelo
+    # Predicción y evaluación
     y_pred = model.predict(X_test)
-    mse = mean_squared_error(y_test, y_pred)
-    print(f"Error cuadrático medio: {mse}")
+    accuracy = accuracy_score(y_test, y_pred)
+    
+    print(f'Accuracy: {accuracy}')
     
     # Guardar el modelo entrenado
     with open('modelo_predictivo.pkl', 'wb') as f:
         pickle.dump(model, f)
+    
+    return model
 
 def main():
-    df = get_data_from_supabase()
-    X, y = preprocess_data(df)
-    train_model(X, y)
+    df = load_data()
+    model = train_model(df)
 
 if __name__ == '__main__':
     main()
+

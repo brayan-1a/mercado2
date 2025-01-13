@@ -11,25 +11,31 @@ def load_model():
 def get_new_data_from_supabase():
     """Obtiene nuevos datos de Supabase para hacer predicciones"""
     supabase = get_supabase_client()
-    # Suponiendo que tienes una tabla 'nuevas_ventas' con las columnas necesarias
     nuevas_ventas = supabase.table('nuevas_ventas').select('*').execute().data
     df = pd.DataFrame(nuevas_ventas)
     return df
 
-def predict(model, new_data):
-    """Realiza la predicción con los nuevos datos"""
-    X_new = new_data[['precio_total', 'descuento_aplicado', 'metodo_pago']]  # Variables independientes
-    predictions = model.predict(X_new)
-    return predictions
+def make_prediction(model, data):
+    """
+    Hace la predicción usando el modelo cargado y los datos de entrada.
+    El modelo toma los datos de entrada y realiza la predicción de acuerdo con las características esperadas.
+    """
+    if 'precio_total' not in data.columns or 'descuento_aplicado' not in data.columns or 'metodo_pago' not in data.columns:
+        raise ValueError("Las columnas necesarias no están presentes en los datos de entrada.")
+    
+    X_new = data[['precio_total', 'descuento_aplicado', 'metodo_pago']]  # Selección de columnas
+    prediction = model.predict(X_new)  # Predicción
+    return prediction
 
 def main():
-    model = load_model()
-    new_data = get_new_data_from_supabase()
-    predictions = predict(model, new_data)
+    model = load_model()  # Cargar el modelo
+    new_data = get_new_data_from_supabase()  # Obtener nuevos datos de Supabase
+    predictions = make_prediction(model, new_data)  # Hacer la predicción
     
-    # Mostrar las predicciones o hacer algo con ellas
+    # Agregar las predicciones a los datos
     new_data['prediccion'] = predictions
     print(new_data)
 
 if __name__ == '__main__':
     main()
+

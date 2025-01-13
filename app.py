@@ -1,27 +1,24 @@
 import streamlit as st
-import pandas as pd
-from prediction import make_prediction, load_model, get_new_data_from_supabase
-from config import get_supabase_client
+from supabase import fetch_data_from_supabase
 
-def show_prediction_page():
-    st.title('Predicción de Ventas')
-    
-    model = load_model()  # Cargar el modelo previamente entrenado
-    new_data = get_new_data_from_supabase()  # Obtener los datos de Supabase
-    
-    st.write('Datos obtenidos de Supabase:')
-    st.dataframe(new_data)
-    
-    if st.button('Hacer predicción'):
-        predictions = make_prediction(model, new_data)
-        new_data['prediccion'] = predictions
-        st.write('Predicciones realizadas:')
-        st.dataframe(new_data)
+# Configuración de la página
+st.set_page_config(page_title="Dashboard de Compras y Ventas", layout="wide")
 
-def main():
-    show_prediction_page()
+# Títulos
+st.title("Dashboard de Predicción de Compras y Reducción de Desperdicios")
 
-if __name__ == '__main__':
-    main()
+# Cargar datos
+ventas = fetch_data_from_supabase('ventas')
+
+# Mostrar datos
+st.subheader("Vista General de Ventas")
+st.dataframe(ventas)
+
+# Ejemplo de visualización
+st.subheader("Visualización de Tendencias")
+if not ventas.empty:
+    ventas['fecha'] = pd.to_datetime(ventas['fecha'])
+    ventas_grouped = ventas.groupby('fecha')['cantidad_vendida'].sum().reset_index()
+    st.line_chart(data=ventas_grouped, x='fecha', y='cantidad_vendida')
 
 

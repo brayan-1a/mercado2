@@ -1,3 +1,4 @@
+from config import Config  # Importar la clase Config
 from supabase import create_client, Client
 import pandas as pd
 from typing import Optional
@@ -12,6 +13,7 @@ class SupabaseConnector:
         """Obtiene la lista de productos con sus detalles"""
         query = self.supabase.table('productos').select('*').execute()
         return pd.DataFrame(query.data)
+
 
     def get_sales_data(self, start_date: datetime) -> pd.DataFrame:
         """Obtiene datos de ventas con información detallada del producto"""

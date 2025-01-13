@@ -1,3 +1,4 @@
+from config import Config  # Importar la clase Config
 import pandas as pd
 import numpy as np
 from typing import Dict, Tuple
@@ -8,6 +9,7 @@ class DataPreprocessor:
         self.config = config
         self.scalers: Dict[str, StandardScaler] = {}
         self.label_encoders: Dict[str, LabelEncoder] = {}
+
 
     def preprocess_data(self, sales: pd.DataFrame, inventory: pd.DataFrame,
                        waste: pd.DataFrame, promos: pd.DataFrame,

@@ -1,4 +1,4 @@
-from supabase import create_client, Client
+from supabase_connector import create_client, Client
 
 # URL y API Key de Supabase
 URL = 'https://odlosqyzqrggrhvkdovj.supabase.co'

@@ -1,10 +1,7 @@
 streamlit
+supabase-py
 pandas
-supabase
-scikit-learn
-joblib
-matplotlib
 numpy
+scikit-learn
 plotly
 python-dotenv
-seaborn

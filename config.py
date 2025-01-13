@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import List, Dict
 import os
 from dotenv import load_dotenv
 import streamlit as st
@@ -27,9 +26,11 @@ class Config:
             
             # Si aún no hay credenciales, usar valores por defecto (solo para desarrollo)
             if not self.SUPABASE_URL or not self.SUPABASE_KEY:
-                self.SUPABASE_URL = 'https://odlosqyzqrggrhvkdovj.supabase.co'
-                self.SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kbG9zcXl6cXJnZ3Jodmtkb3ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzAwNjgyODksImV4cCI6MjA0NTY0NDI4OX0.z5btFX44Eu30kOBJj7eZKAmOUG62IrTcpXUVhMqK9Ck'
+                self.SUPABASE_URL = 'https://odlosqyzqrggrhvkdovj.supabase.co'  # Cambia esta URL por la correcta
+                self.SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kbG9zcXl6cXJnZ3Jodmtkb3ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzAwNjgyODksImV4cCI6MjA0NTY0NDI4OX0.z5btFX44Eu30kOBJj7eZKAmOUG62IrTcpXUVhMqK9Ck'  # Usa la clave correcta aquí
                 print("WARNING: Using default credentials. Consider using environment variables or Streamlit secrets.")
+        # Aquí puedes imprimir para asegurarte de que las credenciales se cargan bien
+        print(f"URL: {self.SUPABASE_URL}, KEY: {self.SUPABASE_KEY}")
 
         # Configurar días de almacenamiento por categoría
         self.STORAGE_DAYS = {
@@ -37,6 +38,7 @@ class Config:
             'FRUTAS': 5,
             'TUBERCULOS': 14
         }
+
 
 
 

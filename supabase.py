@@ -1,5 +1,4 @@
 from supabase import create_client, Client
-import pandas as pd
 
 # URL y API Key de Supabase
 URL = 'https://odlosqyzqrggrhvkdovj.supabase.co'
@@ -8,9 +7,5 @@ supabase: Client = create_client(url, key)
 
 # Función para obtener datos de una tabla en Supabase
 def fetch_data_from_supabase(table_name: str):
-    try:
-        data = supabase.table(table_name).select("*").execute()
-        return pd.DataFrame(data.data)
-    except Exception as e:
-        print(f"Error al obtener datos de la tabla {table_name}: {e}")
-        return pd.DataFrame()
+    data = supabase.table(table_name).select("*").execute()
+    return pd.DataFrame(data.data)

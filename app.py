@@ -1,5 +1,5 @@
 import streamlit as st
-from supabase import fetch_data_from_supabase
+from supabase_connector import fetch_data_from_supabase
 
 # Configuración de la página
 st.set_page_config(page_title="Dashboard de Compras y Ventas", layout="wide")
@@ -20,5 +20,6 @@ if not ventas.empty:
     ventas['fecha'] = pd.to_datetime(ventas['fecha'])
     ventas_grouped = ventas.groupby('fecha')['cantidad_vendida'].sum().reset_index()
     st.line_chart(data=ventas_grouped, x='fecha', y='cantidad_vendida')
+
 
 
